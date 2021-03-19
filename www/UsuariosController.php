@@ -6,7 +6,7 @@
  * Time: 01:20
  */
 
-
+require_once $_SERVER['DOCUMENT_ROOT'] . '/config/bd.php';
 class UsuariosController extends db {
 
     private $db;
