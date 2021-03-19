@@ -14,7 +14,6 @@ class EnderecosController extends db {
 
     public function __construct() {
         $this->conexao = new db();
-        //$this->db = $conexao->conn();
     }
 
     // a função irá fazer o insert passando a tabela e os parametros
@@ -126,9 +125,6 @@ class EnderecosController extends db {
      * @return \Illuminate\Http\Response
      */
     public function show($campos = array()) {
-        $tipoLogradouro = '';
-        $logradouro = '';
-        $cep = '';
         // Irá montar um where com os campos que vierem nesse array
         // então essa var vai servir para que não venha campos desnecessarios
         $validaCamposEnd = array('id', 'tipoLogradouro', 'logradouro', 'cep', 'numero');
@@ -260,7 +256,7 @@ class EnderecosController extends db {
         $ok = false;
         $message = '';
         if(!empty($idEndereco)) {
-            $ok = DB::delete("DELETE FROM usuarios where id = $idEndereco");
+            $ok = $this->conexao->exec("DELETE FROM usuarios where id = $idEndereco");
             if($ok) {
                 $message = 'Usuario Excluído';
             } else {
