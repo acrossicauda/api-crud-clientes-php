@@ -71,16 +71,12 @@ class UsuariosController extends db {
             $idEndereco = $dadosUsuarios['idEndereco'];
 
             try {
-                $query = "";
-                $idUsuario = DB::table('usuarios')->insertGetId(
-                    array(
-                        'name' => $nome,
-                        'login' => $login,
-                        'senha' => $senha,
-                        'idEndereco' => $idEndereco,
-                        'created_at' => date('Y-m-d'),
-                    )
-                );
+                $query = "INSERT INTO usuarios";
+                $query .= "(name, login, senha, idEndereco, created_at)";
+                $query .= " values('{$nome}', '{$login}', '{$senha}', {$idEndereco}, '" . date('Y-m-d') . "')";
+                $this->conexao->executaQuery($query);
+                $idUsuario = $this->conexao->getLastId('usuarios', 'id');
+
                 if($idUsuario) {
                     $message = 'Usuario cadastrado';
                 } else {
