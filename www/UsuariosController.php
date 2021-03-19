@@ -92,11 +92,11 @@ class UsuariosController extends db {
         return ['success' => $sucesso, 'message' => $message, 'idUsuario' => $idUsuario];
     }
 
-    public static function validaUser($login, $senha) {
+    public function validaUser($login, $senha) {
         $ok = false;
         $senha = md5($senha);
         $query = "SELECT name, senha FROM usuarios WHERE login = $login";
-        $data = DB::select($query);
+        $data = $this->conexao->selectLine($query);
         $ok = md5($senha) == $data['senha'] ? true : false;
         return $ok;
     }
@@ -124,7 +124,7 @@ class UsuariosController extends db {
             }
 
             $resp = $this->conexao->selectTable($query);
-            //$resp = DB::select($query);
+
         }
         return $resp;
     }
@@ -160,7 +160,7 @@ class UsuariosController extends db {
             }
 
             $resp = $this->conexao->selectTable($query);
-            //$resp = DB::select($query);
+
             $endereco = new EnderecosController();
 
             foreach ($resp as $k => $value) {
@@ -247,9 +247,7 @@ class UsuariosController extends db {
         } else {
             $message = "O campo 'id' não pode ser vazio";
         }
-        //DB::beginTransaction();
-        //DB::commit();
-        //DB::rollback();
+
         return ['success' => $ok, 'message' => $message];
     }
 }
