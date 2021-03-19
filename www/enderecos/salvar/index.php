@@ -12,4 +12,5 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/EnderecoController.php';
 $endereco = new EnderecosController();
 
 $dados = isset($_REQUEST) ? $_REQUEST : '';
+
 echo json_encode($endereco->store($dados));

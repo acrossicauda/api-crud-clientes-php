@@ -9,6 +9,8 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/EnderecoController.php';
 
 $endereco = new EnderecosController();
-$dados = isset($_REQUEST['dados']) ? $_REQUEST['dados'] : '';
+
+$dados = isset($_REQUEST) ? $_REQUEST : '';
+
 echo json_encode($endereco->show($dados));
 

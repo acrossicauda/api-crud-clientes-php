@@ -11,4 +11,5 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/UsuariosController.php';
 $usuarios = new UsuariosController();
 
 $dados = isset($_REQUEST) ? $_REQUEST : '';
+
 echo json_encode($usuarios->show($dados));

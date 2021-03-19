@@ -7,12 +7,12 @@
  */
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/config/bd.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/EnderecoController.php';
+
 class UsuariosController extends db {
 
-    private $db;
-
     public function __construct() {
-        $this->db = new db();
+        $this->conexao = new db();
     }
 
     /**
@@ -28,7 +28,7 @@ class UsuariosController extends db {
         } else if(isset($dados['idEndereco']) && !empty(isset($dados['idEndereco']))){
             $filtros = array('campos' => 'enderecos', 'id' => $dados['idEndereco']);
             $resp = $endereco->show($filtros);
-            $resp = ['success' => true, 'idEndereco' => $resp['data'][0]->id];
+            $resp = ['success' => true, 'idEndereco' => $resp['data'][0]['id']];
         } else {
             $resp = $endereco->store($dados);
         }
@@ -37,9 +37,6 @@ class UsuariosController extends db {
     }
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
     public function store($dadosUsuarios) {
         //return $dadosUsuarios;
@@ -70,19 +67,16 @@ class UsuariosController extends db {
             $nome = $dadosUsuarios['nome'];
             $login = $dadosUsuarios['login'];
             //$senha = bcrypt($dadosUsuarios['senha']);
-            $senha = Hash::make($dadosUsuarios['senha']);
+            $senha = md5($dadosUsuarios['senha']);
             $idEndereco = $dadosUsuarios['idEndereco'];
 
             try {
-                $idUsuario = DB::table('usuarios')->insertGetId(
-                    array(
-                        'name' => $nome,
-                        'login' => $login,
-                        'senha' => $senha,
-                        'idEndereco' => $idEndereco,
-                        'created_at' => date('Y-m-d'),
-                    )
-                );
+                $query = "INSERT INTO usuarios";
+                $query .= "(name, login, senha, idEndereco, created_at)";
+                $query .= " values('{$nome}', '{$login}', '{$senha}', {$idEndereco}, '" . date('Y-m-d') . "')";
+                $this->conexao->executaQuery($query);
+                $idUsuario = $this->conexao->getLastId('usuarios', 'id');
+
                 if($idUsuario) {
                     $message = 'Usuario cadastrado';
                 } else {
@@ -98,17 +92,18 @@ class UsuariosController extends db {
         return ['success' => $sucesso, 'message' => $message, 'idUsuario' => $idUsuario];
     }
 
-    public static function validaUser($login, $senha) {
+    public function validaUser($login, $senha) {
         $ok = false;
-        $senha = Hash::make($senha);
+        $senha = md5($senha);
         $query = "SELECT name, senha FROM usuarios WHERE login = $login";
-        $data = DB::select($query);
-        $ok = Hash::check($senha, $data['senha']) ? true : false;
+        $data = $this->conexao->selectLine($query);
+        $ok = md5($senha) == $data['senha'] ? true : false;
         return $ok;
     }
 
     private function getCountUsuarios($filtros = array()) {
         $filtrosValidos = array('idEndereco' => 'e', 'idCidade' => 'c', 'idEstado' => 'es');
+        $resp = array();
         if(!empty($filtros)) {
             $query = "SELECT count(u.id) as count_users
             FROM usuarios as u
@@ -128,12 +123,16 @@ class UsuariosController extends db {
                 $query .= implode(' AND ', $where);
             }
 
-            $resp = DB::select($query);
+            $resp = $this->conexao->selectTable($query);
+
         }
         return $resp;
     }
     /**
      * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function show($campos = array()) {
 
@@ -160,12 +159,13 @@ class UsuariosController extends db {
                 }
             }
 
-            $resp = DB::select($query);
+            $resp = $this->conexao->selectTable($query);
+
             $endereco = new EnderecosController();
 
             foreach ($resp as $k => $value) {
-                if(!empty($value->idEndereco)) {
-                    $data = $endereco->show(['id' => $value->idEndereco]);
+                if(!empty($value['idEndereco'])) {
+                    $data = $endereco->show(['id' => $value['idEndereco']]);
                     $resp[$k]->endereco[] = $data['data'];
                 }
             }
@@ -178,6 +178,10 @@ class UsuariosController extends db {
 
     /**
      * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function update($campos) {
         // Irá montar um where com os campos que vierem nesse array
@@ -195,7 +199,7 @@ class UsuariosController extends db {
                 foreach ($campos as $key => $value) {
                     if(in_array($key, $validaCampos)) {
                         if($key == 'senha') {
-                            $value = Hash::make($value);
+                            $value = md5($value);
                         }
                         $updateSet[] = " {$key} = '$value' ";
                     }
@@ -207,7 +211,7 @@ class UsuariosController extends db {
 
             $query .= " WHERE id = $idUsuario";
 
-            $resp = DB::update($query);
+            $resp = $this->conexao->exec($query);
             if($resp) {
                 $resp = true;
                 $message = 'Usuario Atualizado';
@@ -234,7 +238,7 @@ class UsuariosController extends db {
         $ok = false;
         $message = '';
         if(!empty($idUsuario)) {
-            $ok = DB::delete("DELETE FROM usuarios where id = $idUsuario");
+            $ok = $this->conexao->exec("DELETE FROM usuarios where id = $idUsuario");
             if($ok) {
                 $message = 'Usuario Excluído';
             } else {
@@ -243,9 +247,7 @@ class UsuariosController extends db {
         } else {
             $message = "O campo 'id' não pode ser vazio";
         }
-        //DB::beginTransaction();
-        //DB::commit();
-        //DB::rollback();
+
         return ['success' => $ok, 'message' => $message];
     }
 }

@@ -126,12 +126,17 @@ class db extends info {
         }
     }
 
+    function getLastId($table, $idName = '') {
+        $id = $this->selectLine("SELECT {$idName} from usuarios order by {$idName} desc limit 1");
+        return $id[$idName];
+    }
+
     /*
      * @todo
      * executa as querys, por exemplo, update ou delete e retorna o indice alterado
      */
     function executaQuery($query) {
-        mysqli_query($this->conn(), $query);
+        $ok = mysqli_query($this->conn(), $query);
         // $teste = "New Record has id " . mysqli_insert_id($this->conn());
         //return $this->selectLine("SELECT LAST_INSERT_ID()");
         return mysqli_insert_id($this->conn());
@@ -146,7 +151,7 @@ class db extends info {
     function executaQueryReturnId($query) {
         //mysqli_query($this->conn(), $query);
         $this->conn()->prepare($query);
-        $this->conn()->execute();
+        $this->conn()->execute($query);
         // $teste = "New Record has id " . mysqli_insert_id($this->conn());
         //return $this->selectLine("SELECT LAST_INSERT_ID()");
 

@@ -14,7 +14,6 @@ class EnderecosController extends db {
 
     public function __construct() {
         $this->conexao = new db();
-        //$this->db = $conexao->conn();
     }
 
     // a função irá fazer o insert passando a tabela e os parametros
@@ -32,13 +31,22 @@ class EnderecosController extends db {
         }
         $query .= implode(' AND ', $where);
 
-        $id = DB::select($query);
+        $id = $this->conexao->selectLine($query);
+        $id = isset($id['id']) ? $id['id'] : false;
+
         if(!$id) {
-            $id = DB::table($table)->insertGetId(
-                $dados
-            );
-        } else {
-            $id = $id[0]->id;
+            $fields = implode(',', array_keys($dados));
+            $values = array();
+            foreach ($dados as $v) {
+                $values[] = "'{$v}'";
+            }
+            $values = implode(',',$values);
+            $query = "INSERT INTO {$table}";
+            $query .= "({$fields})";
+            $query .= " values({$values})";
+            $ok = $this->conexao->executaQuery($query);
+            $id = $this->conexao->getLastId($table, 'id');
+
         }
 
         return $id;
@@ -116,7 +124,7 @@ class EnderecosController extends db {
 
         }
 
-        return ['success' => $sucesso, 'message' => $message, 'idEndereco' => $idEndereco];
+        return ['success' => $sucesso, 'message' => $message, 'idEndereco' => $idEndereco, 'idCidade' => $idCidade, 'idEstado' => $idEstado];
     }
 
     /**
@@ -126,9 +134,6 @@ class EnderecosController extends db {
      * @return \Illuminate\Http\Response
      */
     public function show($campos = array()) {
-        $tipoLogradouro = '';
-        $logradouro = '';
-        $cep = '';
         // Irá montar um where com os campos que vierem nesse array
         // então essa var vai servir para que não venha campos desnecessarios
         $validaCamposEnd = array('id', 'tipoLogradouro', 'logradouro', 'cep', 'numero');
@@ -228,7 +233,6 @@ class EnderecosController extends db {
                 $query .= " WHERE id = $id";
 
                 $resp = $this->conexao->exec($query);
-                //$resp = DB::update($query);
 
 
                 if($resp) {
@@ -260,7 +264,7 @@ class EnderecosController extends db {
         $ok = false;
         $message = '';
         if(!empty($idEndereco)) {
-            $ok = DB::delete("DELETE FROM usuarios where id = $idEndereco");
+            $ok = $this->conexao->exec("DELETE FROM usuarios where id = $idEndereco");
             if($ok) {
                 $message = 'Usuario Excluído';
             } else {
@@ -269,9 +273,7 @@ class EnderecosController extends db {
         } else {
             $message = "O campo 'id' não pode ser vazio";
         }
-        //DB::beginTransaction();
-        //DB::commit();
-        //DB::rollback();
+
         return ['success' => $ok, 'message' => $message];
     }
 }
